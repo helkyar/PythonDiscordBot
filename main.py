@@ -50,8 +50,25 @@ async def on_message(msg):
   if mct.startswith('$inspire'):
     quote = get_quote()
     await mch.send(quote)
+
+  options = cheers
+  if "cheers" in db.keys():
+    options = options + db["cheers"]
     
   if any (word in mct for word in sad_words):
     await mch.send(random.choice(cheers) )
 
+  if msg.startswith("$new"):
+    new_cheer = msg.split("$new ", 1)[1]
+    update_cheers(new_cheer)
+    await mch.send("New encouraging message added")
+
+  if msg.startswith("$del"):
+    cheers = []
+    if "cheers" in db.keys():
+      index = int(msg.split("$del ",1)[1])
+      delete_cheer(index)
+      cheers = db["cheers"]
+      
+    await mch.send(cheers)
 client.run(os.environ['TOKEN'])
