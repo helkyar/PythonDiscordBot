@@ -5,11 +5,18 @@ import json
 import random
 from replit import db
 
+"""
+Bots will go to sleep after 1h of incativity, the keep_alive file makes shura that doesn't happen. 
+"""
+
 api_url  = "https://zenquotes.io/api/random"
 sad_words = ["sad", "depressed", "unhappy", "angry", "misserable"]
 cheers = ["Cheer up!","You are a great person / bot"]
 
 #================= API CONNECTION =====================
+if "responding" not in db.keys():
+  db["responding"] = True
+
 def get_quote():
   response = requests.get(api_url)
   json_data = json.loads(response.text)
@@ -51,12 +58,13 @@ async def on_message(msg):
     quote = get_quote()
     await mch.send(quote)
 
-  options = cheers
-  if "cheers" in db.keys():
-    options = options + db["cheers"]
-    
-  if any (word in mct for word in sad_words):
-    await mch.send(random.choice(cheers) )
+  if db["responding"]:
+    options = cheers
+    if "cheers" in db.keys():
+      options = options + db["cheers"]
+      
+    if any (word in mct for word in sad_words):
+      await mch.send(random.choice(cheers) )
 
   if msg.startswith("$new"):
     new_cheer = msg.split("$new ", 1)[1]
@@ -64,11 +72,26 @@ async def on_message(msg):
     await mch.send("New encouraging message added")
 
   if msg.startswith("$del"):
-    cheers = []
+    cheer_list = []
     if "cheers" in db.keys():
       index = int(msg.split("$del ",1)[1])
       delete_cheer(index)
-      cheers = db["cheers"]
+      cheer_list = db["cheers"]
       
-    await mch.send(cheers)
+    await mch.send(cheer_list)
+
+  if msg.startswith("$list"):
+    cheer_list = []
+    if "cheers" in db.keys():
+      cheer_list = db["cheers"]
+    await mch.send(cheer_list)
+
+  if msg.startswith("$responding"):
+    value = msg.split("$responding ", 1)[1]
+    if value.lower() == "true":
+      db["responding"] = True
+      await mch.send("Responding is on")
+    elif value.lower() == "false":
+      db["responding"] = False      
+      await mch.send("Responding is off")
 client.run(os.environ['TOKEN'])
